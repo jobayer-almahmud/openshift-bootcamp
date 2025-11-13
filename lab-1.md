@@ -30,6 +30,8 @@
 
 ### CLI
 
+download oc client: https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/
+
 1. Login to your cluster using the `oc` command:
 
 ```bash
