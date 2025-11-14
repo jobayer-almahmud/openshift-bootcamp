@@ -1,283 +1,335 @@
-# Modernize App Deployment with CI/CD — OpenShift Lab (2 hours)
-
-**Goals (by end of lab)**
-
-* Deploy a sample application using Source-to-Image (S2I).
-* Configure automated builds (BuildConfig triggers) so commits kick off builds.
-* Create and inspect a CI/CD pipeline (OpenShift Pipelines / Tekton or BuildConfig + DeploymentConfig steps).
-* Observe pipeline runs and application rollout (GUI and CLI).
-
----
+# OpenShift CI/CD Lab
 
 ## Prerequisites
 
-* OpenShift cluster and credentials (cluster URL, `oc` configured).
-* `oc` CLI installed and logged in as a user with permissions to create projects, builds, pipelines, and deployments.
-* A Git repository containing a simple app (e.g., Node.js, Python, or Java) with a `Dockerfile` or compatible for S2I. Replace `GIT_URL` in steps with your repo URL.
-* Optional: OpenShift Pipelines (Tekton) installed in the cluster (if following the Tekton pipeline sub-section). If not installed, the lab uses BuildConfig + DeploymentConfig pipeline.
+- OpenShift cluster access with credentials
+- `oc` CLI installed
+- Git repository: `https://github.com/jasimalam/fruit-basket-app`
 
 ---
 
-## Lab duration & schedule (2 hours)
+## Part 1: Environment Setup
 
-* 0–10 min: Introduction and environment setup (create project / check access)
-* 10–40 min: Part A — Deploy application using S2I (GUI + CLI)
-* 40–80 min: Part B — Explore automated build pipelines (BuildConfig triggers; GUI + CLI)
-* 80–110 min: Part C — Create a CI/CD pipeline (Tekton example + lighter BuildConfig flow)
-* 110–120 min: Review pipeline run, check application rollout, cleanup, Q&A
+### Step 1.1: Log in to OpenShift
 
----
+Open browser, go to cluster URL, enter credentials.
 
-# Detailed steps
+### Step 1.2: Create Project
 
-> **NOTE:** Each major step includes both **GUI** instructions (OpenShift Console) and **CLI** instructions (`oc`). Follow either or both.
+**Web Console:**
+- **Administrator** → **Home** → **Projects** → **Create Project**
+- Name: `ci-cd-lab`
+- Click **Create**
 
-## 0. Environment setup (0–10 min)
-
-### GUI
-
-1. Log in to the OpenShift web console using your credentials.
-2. Create a new project/namespace: **Administrator → Projects → Create Project**. Name it `ci-cd-lab`.
-3. Open the project dashboard and note the navigation panels (Builds, Pipelines, Workloads, Networking).
-
-### CLI
+**CLI:**
 
 ```bash
-# create project
-oc new-project ci-cd-lab --display-name="CI/CD Lab"
-# confirm
+oc login <cluster-url>
+oc new-project ci-cd-lab
 oc project
-oc whoami
 ```
-
-Expected: project `ci-cd-lab` exists and you are a member.
 
 ---
 
-## Part A — Deploy application using S2I (10–40 min)
+## Part 2: Deploy Application
 
-We will use S2I to build the image from source and create an app deployment.
+### Step 2.1: Deploy from Source
 
-### GUI — S2I quick-start
+**Web Console:**
+- Switch to **Developer** perspective
+- **+Add** → **Import from Git**
+- Git Repo URL: `https://github.com/jasimalam/fruit-basket-app`
+- Builder Image: **Node.js 14-ubi8**
+- Application: `myapp-group`
+- Name: `myapp`
+- Resources: **Deployment**
+- Check **Create a route**
+- Click **Create**
 
-1. In the project, click **+Add** → **From Git**.
-2. Enter **Git Repo URL** (replace `GIT_URL`).
-3. For **Builder Image**, choose a supported S2I builder (e.g., *Node.js*, *Python*, *OpenJDK*, or others available in the cluster). The Console labels these as *Builder image*.
-4. Set the **Application Name** (e.g., `myapp`). Verify resources and route creation options. Click **Create**.
-5. Monitor the Build under **Builds → Builds**. When complete, check **Workloads → Deployments** to see the running pod(s). Click the route URL to open the app.
-
-Tips: If the builder image isn't visible, you may need to enable appropriate image streams or use `oc new-app` in CLI.
-
-### CLI — S2I using `oc new-app`
+**CLI:**
 
 ```bash
-# variables
-PROJECT=ci-cd-lab
-APPNAME=myapp
-GIT_URL=https://github.com/your-org/your-app.git
-BUILDER=nodejs:14  # adjust to a builder available in your cluster
+oc new-app nodejs:14~https://github.com/jasimalam/fruit-basket-app --name=myapp
+oc logs -f bc/myapp
+oc expose svc/myapp
+oc get route myapp
+```
 
-oc project $PROJECT
-# Create an S2I build & app from source
-oc new-app ${BUILDER}~${GIT_URL} --name=${APPNAME}
+### Step 2.2: Access Application
 
-# Watch the build
-oc logs -f bc/${APPNAME}
-# Check build status
+**Web Console:**  
+Topology view → click route icon on `myapp` node
+
+**CLI:**
+```bash
+oc get route myapp -o jsonpath='{.spec.host}'
+```
+
+Open the URL in browser.
+
+---
+
+## Part 3: Manual Builds
+
+### Trigger a Build
+
+**Web Console:**  
+**Builds** → **myapp** → **Actions** → **Start build**
+
+**CLI:**
+
+```bash
+oc start-build myapp
 oc get builds
-# After build completes, check deployment
-oc get pods -l app=${APPNAME}
-# Expose service if not auto-created
-oc expose svc/${APPNAME}
-# Get route
-oc get route ${APPNAME}
-```
-
-Expected: A BuildConfig and Build run, followed by an ImageStream and a Deployment (or DeploymentConfig). Application accessible via a route.
-
-Troubleshooting:
-
-* Build fails due to missing S2I builder: use an available builder image stream or add image stream definitions.
-* If the repo requires a specific context directory or branch, pass `--context-dir` or `--strategy` options.
-
----
-
-## Part A.1 — Manual Build (GUI & CLI)
-
-### GUI — Manual Build
-
-1. Go to **Builds → Build Configs**.
-2. Click the BuildConfig for your app (example: `myapp`).
-3. Click **Actions → Start Build**.
-4. Observe the new Build appearing under **Builds → Builds**.
-5. Open the build log to watch the S2I process.
-
-### CLI — Manual Build
-
-```bash
-ochali_project=ci-cd-lab
-APPNAME=myapp
-oc project $APPNAME
-# Start build manually
-ochali start-build bc/$APPNAME
-# Tail the logs
-ochali logs -f build/$(oc get build -l buildconfig=$APPNAME -o name | tail -1)
+oc logs -f bc/myapp
 ```
 
 ---
 
-## Part B — Explore automated build pipelines (40–80 min)
+## Part 4: Automated Builds
 
-Two quick ways to achieve automation:
+### Get Webhook URL
 
-1. **BuildConfig triggers** (Git/webhook-based automatic builds) — default and simplest.
-2. **OpenShift Pipelines (Tekton)** — full pipeline orchestration (recommended for modern CI/CD).
+**Web Console:**  
+**Builds** → **myapp** → Webhooks section → Copy GitHub webhook URL
 
-### B.1 BuildConfig triggers — GUI
-
-1. Open **Builds → Build Configs** and click your `myapp` BuildConfig.
-2. Under **Configuration** you will find **Triggers**. Ensure GitHub (or GitLab) webhook triggers are enabled (Push events).
-3. Copy the webhook URL and add it to your Git repository's webhook settings (e.g., GitHub → repo → Settings → Webhooks → Add webhook). Use `Push events`.
-4. Make a small change in your repo (e.g., update README) and push — check the Build list to see a new build triggered automatically.
-
-### B.1 BuildConfig triggers — CLI
-
+**CLI:**
 ```bash
-# view buildconfig triggers
-oc get bc ${APPNAME} -o yaml
-# Find webhook URLs (github, generic, gitlab). To print only webhooks:
-oc describe bc ${APPNAME}
-
-# Example: trigger a build manually (simulate a webhook)
-oc start-build bc/${APPNAME}
+oc describe bc/myapp | grep -A 1 "Webhook GitHub"
 ```
 
-Expected: New builds start after each push/webhook.
+Copy the URL that appears (it's very long and starts with `https://`).
 
-### B.2 OpenShift Pipelines (Tekton) — GUI
+### Step 4.2: Understand Webhook Triggers
 
-> Use this path only if Tekton Pipelines (OpenShift Pipelines) is installed.
+The webhook URL allows GitHub (or another Git service) to notify OpenShift when you push code changes. When OpenShift receives this notification, it automatically starts a new build.
 
-1. In the Console, go to **Pipelines → Pipelines** and click **Create Pipeline** (or import a Pipeline YAML).
-2. Create a Pipeline that contains tasks: `fetch-source` (git-clone), `build` (s2i build or buildah/podman inside task), and `deploy` (apply a Deployment/DeploymentConfig or image rollout).
-3. Create a PipelineRun linked to the pipeline; inspect logs as the pipeline executes.
-4. Configure a TriggerBinding/TriggerTemplate and EventListener to accept webhooks from Git. Then add that webhook to your Git provider.
+**Note**: Setting up the actual webhook requires write access to the Git repository. If you're using the sample repository, your instructor may demonstrate this, or you can skip to testing with manual builds.
 
-### B.2 OpenShift Pipelines (Tekton) — CLI (example minimal)
+To set up a webhook (if you have your own repository):
+1. Go to your GitHub repository
+2. Click **Settings** → **Webhooks** → **Add webhook**
+3. Paste the webhook URL from OpenShift
+4. Content type: **application/json**
+5. Select **Just the push event**
+6. Click **Add webhook**
 
-Create resources: `Pipeline`, `PipelineRun`, optionally `TriggerBinding` and `EventListener`. Minimal example using BuildConfig trigger integration (pseudo-steps):
+### Step 4.3: View Build Triggers Configuration
 
 ```bash
-# 1) Create a Task or use standard tasks (git-clone, buildah, kubernetes-actions)
-# 2) Create a Pipeline referencing the Task(s)
+oc get bc/myapp -o yaml | grep -A 10 triggers
+```
+
+You should see configurations for different types of triggers (GitHub, Generic, ImageChange, ConfigChange).
+
+---
+
+## Part 5: Monitor Application Rollout (20 minutes)
+
+### Check Status
+
+**Web Console:**  
+**Administrator** → **Workloads** → **Deployments** → **myapp**
+
+**CLI:**
+```bash
+oc get deployment myapp
+oc rollout status deployment/myapp
+oc get pods -l app=myapp
+```
+
+### View Logs
+
+**Web Console:**  
+**Workloads** → **Pods** → click pod → **Logs** tab
+
+**CLI:**
+```bash
+oc get pods -l app=myapp
+oc logs <pod-name>
+oc logs -f <pod-name>
+```
+
+### Deployment History
+
+```bash
+oc rollout history deployment/myapp
+```
+
+---
+
+## Part 6: CI/CD Pipeline
+
+### Check Pipeline Installation
+**Web Console:**  
+Check left menu for **Pipelines**
+
+**CLI:**
+```bash
+oc get pods -n openshift-pipelines
+```
+
+### Create Pipeline
+
+Create `pipeline.yaml`:
+
+```yaml
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: myapp-pipeline
+  namespace: ci-cd-lab
+spec:
+  params:
+    - name: git-url
+      type: string
+      description: Git repository URL
+    - name: app-name
+      type: string
+      description: Application name
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: deleteExisting
+          value: "true"
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+    
+    - name: build-image
+      taskRef:
+        name: buildah
+        kind: ClusterTask
+      params:
+        - name: IMAGE
+          value: image-registry.openshift-image-registry.svc:5000/ci-cd-lab/$(params.app-name):latest
+      runAfter:
+        - fetch-repository
+      workspaces:
+        - name: source
+          workspace: shared-workspace
+    
+    - name: deploy
+      taskRef:
+        name: openshift-client
+        kind: ClusterTask
+      params:
+        - name: SCRIPT
+          value: |
+            oc rollout status deployment/$(params.app-name)
+      runAfter:
+        - build-image
+  
+  workspaces:
+    - name: shared-workspace
+```
+
+Apply:
+```bash
 oc apply -f pipeline.yaml
-# 3) Start a PipelineRun
+oc get pipeline
+```
+
+### Run Pipeline
+
+Create `pipelinerun.yaml`:
+
+```yaml
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: myapp-pipeline-run-1
+  namespace: ci-cd-lab
+spec:
+  pipelineRef:
+    name: myapp-pipeline
+  params:
+    - name: git-url
+      value: https://github.com/jasimalam/fruit-basket-app
+    - name: app-name
+      value: myapp
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+```
+
+Execute:
+```bash
 oc apply -f pipelinerun.yaml
-# Watch logs
-tkn pipelinerun logs <pipelinerun-name> -f
 ```
 
-Notes:
+### Monitor Execution
 
-* `tkn` CLI (Tekton CLI) is helpful but not required — you can use `oc` to view PipelineRun pods and logs.
-* If Tekton is not installed, fall back to BuildConfig triggers + `oc start-build`.
+**Web Console:**  
+**Pipelines** → **PipelineRuns** → **myapp-pipeline-run-1**
 
-Troubleshooting:
-
-* PipelineTask pods may fail due to missing service account permissions — ensure `pipeline` service account has necessary SCC and image-pull rights.
-
----
-
-## Part C — Review pipeline run and application rollout (80–110 min)
-
-This section shows how to inspect pipeline output, track artifact/image promotion, and check rollout status.
-
-### C.1 Review pipeline run — GUI
-
-1. Open **Pipelines → PipelineRuns** (or **Builds → Builds** if using BuildConfig flow).
-2. Click the running/finished PipelineRun to view logs for each Task.
-3. Note the produced image tag (ImageStream or registry image) and the created Deployment/DeploymentConfig.
-
-### C.1 Review — CLI
-
+**CLI:**
 ```bash
-# If using BuildConfig
-oc get builds -w
-oc logs build/<build-name> -f
-
-# If using Tekton
-# list runs
-oc get pipelineruns -n ci-cd-lab
-# view logs with tkn (if installed)
-tkn pipelinerun logs <pipelinerun-name> -f
-# or inspect pods created for the pipelinerun
-oc get pods -l tekton.dev/pipelineRun=<pipelinerun-name>
-oc logs -f <task-pod-name>
-```
-
-### C.2 Inspect rollout and rollout history — GUI
-
-1. Open **Workloads → Deployments** and click your deployment.
-2. The Console shows current replica status, events, and rollout history.
-3. Use the **Pods** link to view pod logs.
-
-### C.2 Inspect rollout and rollout history — CLI
-
-```bash
-# Check rollout status
-oc rollout status deployment/${APPNAME}
-# Check rollout history
-oc rollout history deployment/${APPNAME}
-# Check pods & logs
-oc get pods -l app=${APPNAME}
-oc logs -f pod/<pod-name>
-# If a deployment fails, describe it
-oc describe deployment/${APPNAME}
-```
-
-Expected: Successful rollout with pods ready. Rollout history shows revisions when images changed.
-
----
-
-## Optional: Promote image across environments (brief)
-
-* Tag ImageStream to a new namespace, or push to internal registry then update Deployment image to new tag.
-
-CLI example:
-
-```bash
-# tag the imagestream to 'stage'
-oc tag ci-cd-lab/${APPNAME}:latest ci-cd-stage/${APPNAME}:promoted
-# or update deployment image
-oc set image deployment/${APPNAME} ${APPNAME}=image-registry.openshift-image-registry.svc:5000/ci-cd-lab/${APPNAME}:latest
+oc get pipelinerun myapp-pipeline-run-1
+oc logs -f $(oc get pods -l tekton.dev/pipelineRun=myapp-pipeline-run-1 -o name | head -1)
 ```
 
 ---
 
-## Final checks, cleanup and submission (110–120 min)
+## Verification
 
-1. Confirm application reachable via route. Note the route URL.
-2. Collect evidence: build logs, PipelineRun name, deployment revision.
-3. Cleanup (optional):
+Check all resources:
+
+```bash
+oc get all -l app=myapp
+curl -I $(oc get route myapp -o jsonpath='{.spec.host}')
+```
+
+Checklist:
+- [ ] Project created
+- [ ] App built and running
+- [ ] Manual builds work
+- [ ] Webhook configured
+- [ ] Logs accessible
+- [ ] Pipeline executed
+- [ ] Route accessible
+
+---
+
+## Troubleshooting
+
+**Build fails:**
+```bash
+oc get imagestreams -n openshift
+```
+
+**Pod crashes:**
+```bash
+oc logs <pod-name>
+```
+
+**Route not working:**
+```bash
+oc get route
+oc get svc
+```
+
+**Pipeline permission issues:**
+```bash
+oc get sa pipeline
+oc describe sa pipeline
+```
+
+---
+
+## Cleanup
 
 ```bash
 oc delete project ci-cd-lab
 ```
-
----
-
-## Lab assessment / checklist
-
-* [ ] Project `ci-cd-lab` created
-* [ ] Application built with S2I and running
-* [ ] Webhook or `oc start-build` triggers a new build
-* [ ] Pipeline (Tekton or simplified) created and executed
-* [ ] Verified rollout and accessed application route
-
----
-
-## Troubleshooting notes & tips
-
-* If builds are timing out, verify network access to your Git provider and the builder images.
-* If tasks fail in Tekton, check ServiceAccount permissions (rolebindings) and SCC.
-* Use `oc describe` to get events and reasons for failures.
