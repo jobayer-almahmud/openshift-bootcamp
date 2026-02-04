@@ -73,6 +73,7 @@ oc whoami
 ### CLI Method
 
 ```bash
+oc get projects
 oc new-project userX-lab1
 oc get projects
 ```
