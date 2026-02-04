@@ -102,15 +102,16 @@ oc new-app nginxinc/nginx-unprivileged --name=webapp
 
 ### GUI Method
 
-1. Go to Networking → Routes in your project
-2. Click Create Route
-3. Configure the route:
+1. Navigate to Administrator →
+2. Go to Networking → Routes in your project
+3. Click Create Route
+4. Configure the route:
    - Name: `webapp`
    - Service: `webapp`
    - Target Port: `8080`
    - Secure Route (optional): Enable HTTPS and choose edge, reencrypt, or passthrough
-4. Click Create
-5. Open the Location URL to verify the NGINX welcome page
+5. Click Create
+6. Open the Location URL to verify the NGINX welcome page
 
 ### CLI Method
 
