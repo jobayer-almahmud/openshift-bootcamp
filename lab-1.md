@@ -66,14 +66,14 @@ oc whoami
 
 ### GUI Method
 
-1. Switch to Developer View → Projects → Create Project
-2. Enter project name: `customer-demo`
+1. Switch to Developer to Administrator View → Home → Projects → Create Project
+2. Enter project name: `userX-Lab1`
 3. Click Create
 
 ### CLI Method
 
 ```bash
-oc new-project customer-demo
+oc new-project userX-Lab1
 oc get projects
 ```
 
