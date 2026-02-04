@@ -67,13 +67,13 @@ oc whoami
 ### GUI Method
 
 1. Switch to Developer to Administrator View → Home → Projects → Create Project
-2. Enter project name: `userX-Lab1`
+2. Enter project name: `userX-lab1`
 3. Click Create
 
 ### CLI Method
 
 ```bash
-oc new-project userX-Lab1
+oc new-project userX-lab1
 oc get projects
 ```
 
