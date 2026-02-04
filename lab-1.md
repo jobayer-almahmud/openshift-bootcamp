@@ -43,8 +43,8 @@ Download OC Client: [https://mirror.openshift.com/pub/openshift-v4/clients/oc/la
    ```
 
 2. Login with credentials:
-   - Username: `admin`
-   - Password: `admin`
+   - Username: `userX`
+   - Password: `openshift`
 
 ### CLI Method
 
