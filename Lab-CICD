@@ -3,19 +3,34 @@
 A hands-on guide to deploying, exposing, and scaling
 
 ## Table of Contents
+https://github.com/rh-mad-workshop/modern-app-dev
+
+oc create secret generic customers-secret --from-file=src/main/resources/persistence.properties
+
+Module 1
+
+https://github.com/rh-mad-workshop/mad-dev-guides-m1
 
 
-https://mad-dev-guides-m1-cicd-user1.apps.cluster-sxdsd.sxdsd.sandbox2510.opentlc.com/mad-dev-guides-m1/main/1-introduction.html
-## 
-https://codeserver-codeserver-user1.apps.cluster-sxdsd.sxdsd.sandbox2510.opentlc.com
 
-https://mta-mta-user1.apps.cluster-sxdsd.sxdsd.sandbox2510.opentlc.com/applications
+https://mad-dev-guides-m1-cicd-user12.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com/mad-dev-guides-m1/main/1-introduction.html
+
+https://codeserver-codeserver-user12.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com
+
+https://mta-mta-user12.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com
 
 
 
+Module 2
 
-https://mad-dev-guides-m2-cicd-user1.apps.cluster-sxdsd.sxdsd.sandbox2510.opentlc.com/mad-dev-guides-m2/main/1-introduction.html
+https://mad-dev-guides-m2-cicd-user12.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com
 
-https://mad-dev-guides-m3-cicd-user1.apps.cluster-sxdsd.sxdsd.sandbox2510.opentlc.com
+Module 3
 
-https://mad-dev-guides-m4-cicd-user1.apps.cluster-sxdsd.sxdsd.sandbox2510.opentlc.com
+https://mad-dev-guides-m3-cicd-user12.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com
+
+Module 4
+
+https://mad-dev-guides-m4-cicd-user12.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com
+
+
