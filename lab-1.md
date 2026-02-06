@@ -39,7 +39,7 @@ Download OC Client: [https://mirror.openshift.com/pub/openshift-v4/clients/oc/la
 
 1. Navigate to the OpenShift Web Console:
    ```
-    OpenShift Console: https://console-openshift-console.apps.cluster-5d8xx.5d8xx.sandbox2826.opentlc.com
+    OpenShift Console: https://console-openshift-console.apps.cluster-cjz84.cjz84.sandbox521.opentlc.com
    ```
 
 2. Login with credentials:
@@ -51,7 +51,7 @@ Download OC Client: [https://mirror.openshift.com/pub/openshift-v4/clients/oc/la
 Login to your cluster:
 
 ```bash
-oc login https://api.cluster-5d8xx.5d8xx.sandbox2826.opentlc.com:6443 -u userX -p openshift
+oc login  https://api.cluster-cjz84.cjz84.sandbox521.opentlc.com:6443 -u userX -p openshift
 ```
 
 Verify your login:
