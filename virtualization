@@ -1,0 +1,20 @@
+https://rhpds.github.io/openshift-virt-roadshow-cnv-multi-user/modules/index.html
+
+
+Apart from the OpenShift Dev Cluster, PF details for Virt Cluster. I have shared the manuals with you on whatsapp
+
+OpenShift Console: https://console-openshift-console.apps.cluster-bnwk5.dynamic.redhatworkshops.io
+OpenShift API for command line 'oc' client: https://api.cluster-bnwk5.dynamic.redhatworkshops.io:6443
+
+Download oc client from http://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.18.20/openshift-client-linux-4.18.20.tar.gz
+Authentication via htpasswd is enabled on this cluster.
+
+User admin with password qcyNXj47KzSIcN5O is cluster admin.
+
+Users user1 .. user7 created with password vrkdMCZCZVzlhHD9
+
+OpenShift GitOps ArgoCD: https://openshift-gitops-server-openshift-gitops.apps.cluster-bnwk5.dynamic.redhatworkshops.io
+
+You can access your bastion via SSH:
+ssh lab-user@ssh.ocpv06.rhdp.net -p 31378
+Enter ssh password when prompted: RJh2obE2GRmi
